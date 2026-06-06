@@ -1,3 +1,8 @@
 __pycache__/
 *.pyc
 .env
+models/
+data/chromadb_multimodal/
+data/images/
+filtered_comments.csv
+reverse_queries.csv
