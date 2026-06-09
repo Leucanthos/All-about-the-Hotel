@@ -1,0 +1,252 @@
+{
+  "tasks": {
+    "ltr": {
+      "rounds": [
+        {
+          "round": 0,
+          "name": "round0_baseline",
+          "description": "CLIP only, no re-ranking",
+          "config": {
+            "name": "round0_baseline",
+            "description": "CLIP only, no re-ranking",
+            "n_train_queries": 200,
+            "n_test_queries": 100,
+            "features": "['clip_cos', 'same_room', 'score_drop', 'norm_rank']",
+            "hidden_dim": 32,
+            "epochs": 30,
+            "lr": 0.001,
+            "loss_type": "pairwise"
+          },
+          "metrics": {
+            "clip": {
+              "hit1": 0.0,
+              "hit5": 0.01,
+              "hit10": 0.05
+            }
+          }
+        },
+        {
+          "round": 1,
+          "name": "round1_mlp_4feat_pairwise",
+          "description": "MLP LTR, 4 features, pairwise hinge loss, 200 queries, 30 epochs",
+          "config": {
+            "name": "round1_mlp_4feat_pairwise",
+            "description": "MLP LTR, 4 features, pairwise hinge loss, 200 queries, 30 epochs",
+            "n_train_queries": 200,
+            "n_test_queries": 100,
+            "features": "['clip_cos', 'same_room', 'score_drop', 'norm_rank']",
+            "hidden_dim": 32,
+            "epochs": 30,
+            "lr": 0.001,
+            "loss_type": "pairwise"
+          },
+          "metrics": {
+            "clip": {
+              "hit1": 0.0,
+              "hit5": 0.01,
+              "hit10": 0.05
+            },
+            "ltr": {
+              "hit1": 0.01,
+              "hit5": 0.07,
+              "hit10": 0.08
+            }
+          }
+        },
+        {
+          "round": 2,
+          "name": "round2_more_data_listwise",
+          "description": "Scale to 500 queries, add score_std feature, listwise ListNet loss",
+          "config": {
+            "name": "round2_more_data_listwise",
+            "description": "Scale to 500 queries, add score_std feature, listwise ListNet loss",
+            "n_train_queries": 500,
+            "n_test_queries": 100,
+            "features": "['clip_cos', 'same_room', 'score_drop', 'norm_rank', 'score_std']",
+            "hidden_dim": 32,
+            "epochs": 20,
+            "lr": 0.001,
+            "loss_type": "listwise"
+          },
+          "metrics": {
+            "clip": {
+              "hit1": 0.0,
+              "hit5": 0.01,
+              "hit10": 0.05
+            },
+            "ltr": {
+              "hit1": 0.03,
+              "hit5": 0.07,
+              "hit10": 0.08
+            }
+          }
+        },
+        {
+          "round": 3,
+          "name": "round3_deeper_more_features",
+          "description": "Deeper MLP (64-dim), comment_len + query_room features, 500 queries",
+          "config": {
+            "name": "round3_deeper_more_features",
+            "description": "Deeper MLP (64-dim), comment_len + query_room features, 500 queries",
+            "n_train_queries": 500,
+            "n_test_queries": 100,
+            "features": "['clip_cos', 'same_room', 'score_drop', 'norm_rank', 'score_std', 'comment_len', 'query_room_has']",
+            "hidden_dim": 64,
+            "epochs": 25,
+            "lr": 0.001,
+            "loss_type": "listwise"
+          },
+          "metrics": {
+            "clip": {
+              "hit1": 0.0,
+              "hit5": 0.01,
+              "hit10": 0.05
+            },
+            "ltr": {
+              "hit1": 0.02,
+              "hit5": 0.07,
+              "hit10": 0.08
+            }
+          }
+        },
+        {
+          "round": 4,
+          "name": "R4_cross_modal_fusion",
+          "description": "Cross-modal features + listwise, 500q, 20ep (v5 #1)",
+          "config": {
+            "name": "R4_cross_modal_fusion",
+            "description": "Cross-modal features + listwise, 500q, 20ep (v5 #1)",
+            "n_train_queries": 500,
+            "n_test_queries": 100,
+            "features": "['clip_cos', 'same_room', 'score_drop', 'norm_rank', 'score_std', 'cross_text_sim', 'cross_rank_ratio']",
+            "hidden_dim": 32,
+            "epochs": 20,
+            "lr": 0.001,
+            "loss_type": "listwise",
+            "cross_modal": true,
+            "hard_neg_weight": 0.0
+          },
+          "metrics": {
+            "clip": {
+              "hit1": 0.0,
+              "hit5": 0.01,
+              "hit10": 0.05
+            },
+            "ltr": {
+              "hit1": 0.02,
+              "hit5": 0.07,
+              "hit10": 0.08
+            }
+          }
+        },
+        {
+          "round": 5,
+          "name": "R5_hard_neg_weighted",
+          "description": "Hard negative weighting + listwise, 500q, 20ep (v5 #4)",
+          "config": {
+            "name": "R5_hard_neg_weighted",
+            "description": "Hard negative weighting + listwise, 500q, 20ep (v5 #4)",
+            "n_train_queries": 500,
+            "n_test_queries": 100,
+            "features": "['clip_cos', 'same_room', 'score_drop', 'norm_rank', 'score_std', 'cross_text_sim', 'cross_rank_ratio']",
+            "hidden_dim": 32,
+            "epochs": 20,
+            "lr": 0.001,
+            "loss_type": "listwise",
+            "cross_modal": true,
+            "hard_neg_weight": 3.0
+          },
+          "metrics": {
+            "clip": {
+              "hit1": 0.0,
+              "hit5": 0.01,
+              "hit10": 0.05
+            },
+            "ltr": {
+              "hit1": 0.02,
+              "hit5": 0.07,
+              "hit10": 0.08
+            }
+          }
+        }
+      ]
+    },
+    "classifier": {
+      "rounds": [
+        {
+          "round": 0,
+          "name": "round0_baseline",
+          "description": "CLIP only, no classifier pre-filter",
+          "config": {
+            "name": "round0_baseline",
+            "description": "CLIP only, no classifier pre-filter",
+            "freeze_encoder": "True",
+            "epochs": "5",
+            "lr": "0.001",
+            "use_class_weights": "False"
+          },
+          "metrics": {
+            "accuracy": 0,
+            "clip": {
+              "hit1": 0.0,
+              "hit5": 0.01,
+              "hit10": 0.05
+            }
+          }
+        },
+        {
+          "round": 1,
+          "name": "round1_frozen_bert_linear",
+          "description": "Frozen BERT + linear classifier, 5 epochs",
+          "config": {
+            "name": "round1_frozen_bert_linear",
+            "description": "Frozen BERT + linear classifier, 5 epochs",
+            "freeze_encoder": "True",
+            "epochs": "5",
+            "lr": "0.001",
+            "use_class_weights": "False"
+          },
+          "metrics": {
+            "accuracy": 0.41,
+            "clip": {
+              "hit1": 0.0,
+              "hit5": 0.01,
+              "hit10": 0.05
+            },
+            "filter": {
+              "hit1": 0.0,
+              "hit5": 0.02,
+              "hit10": 0.05
+            }
+          }
+        },
+        {
+          "round": 2,
+          "name": "round2_finetune_top2_weighted",
+          "description": "Fine-tune top 2 BERT layers, class-weighted loss, 10 epochs",
+          "config": {
+            "name": "round2_finetune_top2_weighted",
+            "description": "Fine-tune top 2 BERT layers, class-weighted loss, 10 epochs",
+            "freeze_encoder": "False",
+            "epochs": "10",
+            "lr": "0.001",
+            "use_class_weights": "True"
+          },
+          "metrics": {
+            "accuracy": 0.45,
+            "clip": {
+              "hit1": 0.0,
+              "hit5": 0.01,
+              "hit10": 0.05
+            },
+            "filter": {
+              "hit1": 0.0,
+              "hit5": 0.03,
+              "hit10": 0.05
+            }
+          }
+        }
+      ]
+    }
+  }
+}
