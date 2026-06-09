@@ -1,2 +1,0 @@
-from .multimodal import MultimodalRetriever
-
