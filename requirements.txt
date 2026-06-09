@@ -1,0 +1,17 @@
+# 核心依赖
+torch>=2.0
+transformers>=4.40
+numpy
+pandas
+pillow
+requests
+
+# 向量存储
+pyarrow
+
+# GPU 推理 (可选, Intel/OpenVINO)
+openvino>=2024.0
+optimum-intel
+
+# 训练加速 (可选, Intel XPU)
+# 需手动安装: intel-extension-for-pytorch

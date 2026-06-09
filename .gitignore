@@ -1,8 +1,22 @@
 __pycache__/
 *.pyc
 .env
-models/
-data/chromadb_multimodal/
-data/images/
+dxinfo.txt
+
+# === 数据文件 (需用户自行准备或通过 setup.py 生成) ===
 *.csv
 *.parquet
+data/images/
+data/vectors/
+data/vectors_np/
+data/chromadb_cn/
+
+# === 大模型权重 (通过 transformers 自动下载) ===
+data/finetuned/*.safetensors
+data/finetuned/tokenizer.json
+data/finetuned/vocab.txt
+data/openvino/*.bin
+*.npy
+
+# === 实验权重 (可通过 finetune.py 重新生成) ===
+data/experiments/
