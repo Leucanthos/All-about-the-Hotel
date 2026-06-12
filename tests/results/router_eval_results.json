@@ -1,0 +1,17 @@
+{
+  "total_cases": 28,
+  "dyx_accuracy_pct": 96.4,
+  "old_accuracy_pct": 7.1,
+  "latency_us": {
+    "mean": 10.6,
+    "median": 9.6
+  },
+  "failures": [
+    {
+      "id": "overall_2",
+      "query": "值得推荐吗",
+      "expected": "overall",
+      "got": "price"
+    }
+  ]
+}

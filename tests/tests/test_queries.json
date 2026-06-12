@@ -1,0 +1,127 @@
+[
+  {
+    "id": "intent_facility",
+    "query": "游泳池干净吗",
+    "expected_intent": "facility"
+  },
+  {
+    "id": "intent_food",
+    "query": "早餐好吃吗",
+    "expected_intent": "food"
+  },
+  {
+    "id": "intent_price",
+    "query": "多少钱一晚",
+    "expected_intent": "price"
+  },
+  {
+    "id": "intent_location",
+    "query": "交通方便吗",
+    "expected_intent": "location"
+  },
+  {
+    "id": "intent_service",
+    "query": "前台服务态度怎么样",
+    "expected_intent": "service"
+  },
+  {
+    "id": "intent_cleanliness",
+    "query": "房间卫生干净吗",
+    "expected_intent": "cleanliness"
+  },
+  {
+    "id": "intent_quiet",
+    "query": "隔音效果好不好",
+    "expected_intent": "quiet"
+  },
+  {
+    "id": "intent_child",
+    "query": "适合带孩子住吗",
+    "expected_intent": "child_friendly"
+  },
+  {
+    "id": "intent_elder",
+    "query": "适合老人入住吗",
+    "expected_intent": "service"
+  },
+  {
+    "id": "intent_overall",
+    "query": "酒店体验怎么样",
+    "expected_intent": "overall"
+  },
+  {
+    "id": "intent_mixed_1",
+    "query": "早餐种类多吗 游泳池怎么样",
+    "expected_intent": "facility"
+  },
+  {
+    "id": "intent_mixed_2",
+    "query": "房间装修豪华吗 服务态度好不",
+    "expected_intent": "facility"
+  },
+  {
+    "id": "bm25_breakfast",
+    "query": "早餐 品种 丰富",
+    "expected_bm25_hit": true
+  },
+  {
+    "id": "bm25_pool",
+    "query": "游泳池 干净",
+    "expected_bm25_hit": true
+  },
+  {
+    "id": "bm25_parking",
+    "query": "停车场 方便",
+    "expected_bm25_hit": true
+  },
+  {
+    "id": "bm25_noise",
+    "query": "隔音 噪音 吵",
+    "expected_bm25_hit": true
+  },
+  {
+    "id": "rag_service",
+    "query": "前台服务怎么样？有没有常见问题？",
+    "expected_rag_evidence": true
+  },
+  {
+    "id": "rag_breakfast",
+    "query": "早餐有什么推荐？品质如何？",
+    "expected_rag_evidence": true
+  },
+  {
+    "id": "rag_family",
+    "query": "带老人小孩入住合适吗？有什么需要注意的？",
+    "expected_rag_evidence": true
+  },
+  {
+    "id": "fusion_room",
+    "query": "套房 豪华装修",
+    "expected_fusion_multi": true
+  },
+  {
+    "id": "fusion_garden",
+    "query": "花园 漂亮 环境",
+    "expected_fusion_multi": true
+  },
+  {
+    "id": "edge_short",
+    "query": "早餐",
+    "expected_intent": "food"
+  },
+  {
+    "id": "edge_empty",
+    "query": "",
+    "expected_intent": "mixed"
+  },
+  {
+    "id": "edge_special_chars",
+    "query": "房间！！干净？？",
+    "expected_intent": "facility"
+  },
+  {
+    "id": "edge_english",
+    "query": "breakfast quality",
+    "expected_intent": "mixed"
+  }
+]

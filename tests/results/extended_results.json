@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-06-13 01:23:02",
+  "hotels": 12,
+  "samples_per_hotel": 200,
+  "total_queries": 48,
+  "passed": 54,
+  "total": 61,
+  "failed": 7,
+  "errors": [
+    "FAIL  [intent_cleanliness_0] 房间干净吗                    -> cleanliness       got facility",
+    "FAIL  [intent_child_friendly_2] 亲子设施完善吗                  -> child_friendly    got facility",
+    "FAIL  [intent_elder_friendly_1] 有电梯吗老人方便吗                -> elder_friendly    got facility",
+    "FAIL  [intent_overall_1] 值得推荐吗                    -> overall           got price",
+    "FAIL  [mixed_facility_0] 早餐好吃吗 游泳池怎么样             -> facility          got food",
+    "FAIL  [mixed_child_friendly_4] 适合带孩子吗 房间干净吗             -> child_friendly    got facility",
+    "FAIL  [edge_2] breakfast                -> food              got mixed"
+  ]
+}

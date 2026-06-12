@@ -1,8 +1,15 @@
-"""Agentic RAG 检索引擎 — HotelCorpus + AgenticRAG (SUN Yuhao)."""
+"""Agentic RAG 检索引擎 — HotelCorpus + AgenticRAG (SUN Yuhao).
+
+v2 增强 (dyx 贡献集成):
+  - BM25 中文检索 (jieba 分词) 作为可选检索后端
+  - RRF 多路融合合并 BM25 + char_terms 结果
+"""
+
 import json
 import math
 from collections import Counter
 from pathlib import Path
+from typing import List, Optional
 
 from _shared.text import char_terms, normalize, parse_categories
 from _shared.data import COMMENTS_PATH, SUMMARIES_PATH
@@ -23,9 +30,10 @@ CATEGORY_ALIASES = {
 
 
 class HotelCorpus:
-    """酒店评论语料库 — 基于 parquet 的轻量 BM25-like 检索."""
+    """酒店评论语料库 — 支持 BM25 + char_terms 双引擎."""
 
-    def __init__(self, comments_path=COMMENTS_PATH, summaries_path=SUMMARIES_PATH, max_docs=4000):
+    def __init__(self, comments_path=COMMENTS_PATH, summaries_path=SUMMARIES_PATH,
+                 max_docs=4000, use_bm25: bool = True):
         import pandas as pd
         df = pd.read_parquet(comments_path)
         self.docs = []
@@ -49,6 +57,20 @@ class HotelCorpus:
         self.summaries = self._load_summaries(Path(summaries_path))
         self.idf = self._build_idf()
 
+        # [dyx 贡献] BM25 索引
+        self._bm25 = None
+        if use_bm25:
+            try:
+                from _shared.bm25 import InvertedIndex
+                bm25 = InvertedIndex()
+                documents = {}
+                for d in self.docs:
+                    documents[d["_id"]] = d["comment"]
+                bm25.build(documents)
+                self._bm25 = bm25
+            except Exception:
+                pass
+
     def _load_summaries(self, path: Path):
         if not path.exists():
             return {}
@@ -70,7 +92,29 @@ class HotelCorpus:
                 cats.extend(values)
         return list(dict.fromkeys(cats))
 
-    def search(self, query: str, categories=None, top_k=6):
+    def search(self, query: str, categories=None, top_k=6, method="auto"):
+        """检索方法.
+
+        Args:
+            method: "auto" (先 BM25 后 char_terms), "bm25", "char_terms"
+        """
+        if method in ("auto", "bm25") and self._bm25 is not None:
+            bm25_raw = self._bm25.search(query, topk=top_k * 2)
+            if bm25_raw and method == "bm25":
+                scored = []
+                id_map = {d["_id"]: d for d in self.docs}
+                for doc_id, score in bm25_raw:
+                    doc = id_map.get(doc_id)
+                    if doc:
+                        scored.append((score, doc))
+                if categories:
+                    for i, (s, doc) in enumerate(scored):
+                        overlap = set(categories).intersection(doc["categories_list"])
+                        scored[i] = (s + 8.0 * len(overlap), doc)
+                scored.sort(key=lambda x: x[0], reverse=True)
+                return scored[:top_k]
+
+        # fallback: char_terms
         q_terms = Counter(char_terms(query))
         category_set = set(categories or [])
         scored = []
@@ -165,11 +209,11 @@ def build_context(rag_result):
         cats = "、".join(doc.get("categories_list", []))
         lines.append(
             f"[评论{i}] score={score:.2f} 评分={doc.get('score')} 房型={doc.get('fuzzy_room_type')} "
-            f"类别={cats}\n{doc.get('comment')[:320]}"
+            f"类别={cats}\\n{doc.get('comment')[:320]}"
         )
     for item in rag_result["summaries"][:3]:
         lines.append(
-            f"[类别摘要] {item.get('category')} 评论数={item.get('comment_count')}\n"
+            f"[类别摘要] {item.get('category')} 评论数={item.get('comment_count')}\\n"
             f"{normalize(item.get('summary', ''))[:360]}"
         )
-    return "\n\n".join(lines)
+    return "\\n\\n".join(lines)

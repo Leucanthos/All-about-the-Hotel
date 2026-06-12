@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-06-13 01:47:15",
+  "total_cases": 33,
+  "intent_accuracy_pct": 87.9,
+  "classification_latency_us": {
+    "mean": 10.9,
+    "median": 10.3,
+    "min": 7.4,
+    "max": 31.1
+  },
+  "route_latency_ms": {
+    "mean": 14.03,
+    "min": 7.238,
+    "max": 29.215
+  },
+  "old_classifier_accuracy_pct": 9.1,
+  "dyx_classifier_accuracy_pct": 87.9,
+  "failures": [
+    [
+      "clean_1",
+      "房间干净吗",
+      "exp=cleanliness, got=facility"
+    ],
+    [
+      "child_2",
+      "亲子设施怎么样",
+      "exp=child_friendly, got=facility"
+    ],
+    [
+      "overall_2",
+      "值得推荐吗",
+      "exp=overall, got=price"
+    ],
+    [
+      "mixed_1",
+      "早餐好吃吗 游泳池怎么样",
+      "exp=facility, got=food"
+    ]
+  ]
+}

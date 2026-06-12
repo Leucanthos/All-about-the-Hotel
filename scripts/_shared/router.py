@@ -118,28 +118,33 @@ def _intent_to_strategies(intent: str) -> list[str]:
     return ["multimodal", "rag"]
 
 
-# -- Engines --
+# -- Engines (使用共享缓存 _shared/cache, 避免重复加载) --
 
 def _run_multimodal(query: str, top_k: int = 10) -> Optional[dict]:
+    """多模态检索 — Leuca 贡献 (共享缓存)."""
     try:
-        from leuca.multimodal.api import MultimodalAPI
-        api = MultimodalAPI()
-        r = api.prompt2image(query, topK=top_k)
-        return {"images": r["images"], "scores": [round(s, 4) for s in r["score"]],
-                "method": "CLIP", "latency_ms": 0}
+        from _shared.cache import cache
+        retriever = cache.get_retriever()
+        r = retriever.search_images(query, top_k=top_k)
+        return {"images": [item.get("comment", "") for item in r],
+                "scores": [round(item.get("similarity", 0), 4) for item in r],
+                "image_ids": [item.get("image_id", "") for item in r],
+                "method": "Chinese-CLIP", "latency_ms": 0}
     except Exception as e:
         return {"error": str(e)}
 
 
 def _run_rag(query: str, top_k: int = 8) -> Optional[dict]:
+    """Agentic RAG — Yuhao 贡献 (共享缓存)."""
     try:
         from yuhao.agentic.api import answer_question
         has_key = bool(os.getenv("DEEPSEEK_API_KEY") or os.getenv("LLM_API_KEY"))
         output = answer_question(query, top_k=top_k, use_llm=has_key)
         result = output["result"]
-        return {"answer": output["answer"][:2000],
-                "evidence_score": result["evidence_score"],
-                "categories": result["categories"],
+        return {"answer": output.get("answer", "")[:2000],
+                "evidence_score": result.get("evidence_score", 0),
+                "categories": result.get("categories", []),
+                "trace": result.get("trace", []),
                 "sources": [{"score": round(s, 2), "comment": doc.get("comment", "")[:200]}
                            for s, doc in result.get("results", [])[:5]],
                 "latency_ms": 0}
@@ -147,18 +152,37 @@ def _run_rag(query: str, top_k: int = 8) -> Optional[dict]:
         return {"error": str(e)}
 
 
-# -- Main API --
+def _run_bm25_cache(query: str, top_k: int = 10) -> Optional[dict]:
+    """BM25 关键词检索 — dyx 贡献 (缓存复用)."""
+    try:
+        from _shared.cache import cache
+        index = cache.get_bm25()
+        df = cache.get_comments()
+        raw = index.search(query, topk=top_k)
+        items = []
+        for doc_id, score in raw:
+            row = df[df["_id"].astype(str) == doc_id]
+            comment = str(row["comment"].values[0]) if not row.empty else ""
+            items.append({"doc_id": doc_id, "score": round(score, 4), "comment": comment[:300]})
+        return {"results": items, "method": "BM25+jieba", "total_docs": index.num_docs, "latency_ms": 0}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# -- Main API (v2: 使用统一检索编排器) --
 
 def route(query: str, top_k: int = 10,
           strategies: Optional[List[str]] = None,
           use_llm: bool = False) -> dict:
-    """Layer 2 entry point.
+    """Layer 2 统一入口 (v2).
+
+    使用 _shared/retriever 统一编排, 共享缓存避免重复加载.
 
     Args:
         query: natural language query
         top_k: results per strategy
-        strategies: manual override (None = auto-detect)
-        use_llm: enable LLM-based intent classification (needs API key)
+        strategies: manual override (None = auto-detect via dyx intent classifier)
+        use_llm: enable LLM-based intent classification
 
     Returns:
         {query, intent, router, strategies, results, meta}
@@ -167,6 +191,7 @@ def route(query: str, top_k: int = 10,
     routing = {"method": "keyword"}
     llm_attempted = False
 
+    # 策略自动检测
     if strategies is None:
         if use_llm:
             llm_attempted = True
@@ -179,32 +204,133 @@ def route(query: str, top_k: int = 10,
                 intent = classify_intent(query)
                 routing = {"method": "keyword", "note": "no API key or network error"}
         else:
-            intent = classify_intent(query)
-        strategies = _intent_to_strategies(intent)
+            # [dyx] 细粒度中文意图分类
+            detailed = classify_intent_detailed(query)
+            intent = detailed["primary"]
+            strategies = detailed["strategies"]
+            routing = {"method": "keyword", "intent_detail": detailed}
     else:
-        intent_map = {"multimodal": "visual", "rag": "qa", "all": "mixed"}
+        intent_map = {"multimodal": "visual", "rag": "qa", "bm25": "keyword",
+                     "fusion": "mixed", "all": "mixed"}
         intent = intent_map.get(strategies[0] if len(strategies) == 1 else "all", "mixed")
 
-    results = {}
-    for name in strategies:
-        t0 = time.time()
-        r = _run_multimodal(query, top_k) if name == "multimodal" \
-            else _run_rag(query, min(top_k, 8))
-        if r:
-            r["latency_ms"] = round((time.time() - t0) * 1000)
-        results[name] = r
+    # 通过统一检索器执行
+    from _shared.retriever import retrieve as _retrieve
+    retriever_result = _retrieve(query, top_k=top_k, strategies=strategies, use_llm=use_llm)
+
+    results = retriever_result.get("results", {})
 
     try:
-        from leuca.multimodal.api import MultimodalAPI
-        stats = MultimodalAPI().stats
+        from _shared.cache import cache
+        stats = cache.get_retriever().stats
     except Exception:
         stats = {}
 
     output = {
-        "query": query, "intent": intent, "router": routing,
-        "strategies": strategies, "results": results,
-        "meta": {"index_stats": stats, "total_latency_ms": round((time.time() - start) * 1000)},
+        "query": query,
+        "intent": intent,
+        "router": routing,
+        "strategies": strategies,
+        "results": results,
+        "meta": {
+            "index_stats": stats,
+            "total_latency_ms": round((time.time() - start) * 1000),
+            "engines": retriever_result.get("engines", {}),
+        },
     }
-    if llm_attempted and routing["method"] == "keyword":
+    if llm_attempted and routing.get("method") == "keyword":
         output["_hint"] = SETUP_HINT
     return output
+# ===========================================================================
+# [dyx 贡献] 细粒度中文意图分类 + 查询扩展
+# ===========================================================================
+
+_INTENT_CATEGORIES_ZH = {
+    "facility":       ["设施", "设备", "装修", "房间", "游泳池", "健身房", "花园",
+                        "停车场", "电梯", "空调", "热水", "无线", "wifi", "网络"],
+    "price":          ["价格", "性价比", "费用", "划算", "值得", "贵", "便宜", "多少钱", "值", "优惠", "折扣", "房价"],
+    "location":       ["位置", "交通", "周边", "地铁", "商圈", "距离", "出行",
+                        "方便", "市中心", "景区"],
+    "service":        ["服务", "前台", "态度", "专业", "热情", "效率", "办理",
+                        "入住", "退房", "客服", "管家"],
+    "food":           ["早餐", "餐饮", "餐厅", "美食", "食品", "自助餐", "品种", "菜品", "口味", "好吃"],
+    "cleanliness":    ["卫生", "干净", "清洁", "整洁", "脏", "异味", "霉"],
+    "quiet":          ["安静", "噪音", "隔音", "吵", "嘈杂", "睡眠"],
+    "child_friendly": ["亲子", "儿童", "小孩", "孩子", "家庭", "乐园"],
+    "elder_friendly": ["老人", "长辈", "轮椅", "无障碍", "适老"],
+    "overall":        ["推荐", "体验", "感受", "总结", "评价", "怎么样", "如何"],
+}
+
+_INTENT_STRATEGY_MAP = {
+    "facility":       "multimodal",
+    "price":          "rag", "location":     "rag",
+    "service":        "rag", "food":         "rag",
+    "cleanliness":    "rag", "quiet":        "rag",
+    "child_friendly": "rag", "elder_friendly": "rag",
+    "overall":        "rag",
+}
+
+
+def classify_intent_detailed(query: str) -> dict:
+    """细粒度中文意图分类 — 返回 {primary, categories, confidence, strategies}.
+
+    基于 dyx 的关键词分类体系, 映射到现有策略.
+    """
+    q_lower = query.lower()
+    scores = {}
+    for cat, keywords in _INTENT_CATEGORIES_ZH.items():
+        score = sum(1 for kw in keywords if kw in q_lower or kw.lower() in query)
+        if score > 0:
+            scores[cat] = score
+
+    if not scores:
+        return {"primary": "mixed", "categories": [], "confidence": 0.5,
+                "strategies": ["multimodal", "rag"]}
+
+    sorted_cats = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    primary = sorted_cats[0][0]
+    confidence = sorted_cats[0][1] / max(sum(scores.values()), 1)
+
+    strategy_set = set()
+    for cat, _ in sorted_cats:
+        s = _INTENT_STRATEGY_MAP.get(cat, "rag")
+        strategy_set.add(s)
+    strategies = list(strategy_set) if strategy_set else ["multimodal", "rag"]
+
+    return {
+        "primary": primary,
+        "categories": [c for c, _ in sorted_cats],
+        "confidence": round(min(confidence, 1.0), 4),
+        "strategies": strategies,
+    }
+
+
+def expand_query(query: str, max_expansions: int = 2) -> list:
+    """用 LLM 扩展查询, 生成 1~2 个相关子问题."""
+    from _shared.llm import chat
+    prompt = (
+        "酒店评论搜索: " + query + "\n\n"
+        "请生成 1~2 个相关的搜索意图, 帮助更全面地检索.\n"
+        "每行一个, 尽量简洁."
+    )
+    try:
+        result = chat([
+            {"role": "system", "content": "你是酒店搜索助手, 只输出搜索词, 每行一个."},
+            {"role": "user", "content": prompt},
+        ], max_tokens=100, temperature=0.3)
+        if result:
+            expansions = [line.strip().strip("-").strip()
+                         for line in result.strip().split("\n")
+                         if line.strip()]
+            seen = {query}
+            queries = [query]
+            for exp in expansions:
+                if exp and exp not in seen:
+                    queries.append(exp)
+                    seen.add(exp)
+                if len(queries) > max_expansions:
+                    break
+            return queries
+    except Exception:
+        pass
+    return [query]

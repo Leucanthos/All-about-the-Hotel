@@ -1,0 +1,81 @@
+{
+  "intent_accuracy": {
+    "total_cases": 20,
+    "old_keyword": {
+      "correct": 4,
+      "accuracy_pct": 20.0
+    },
+    "dyx_detailed": {
+      "correct": 20,
+      "accuracy_pct": 100.0
+    }
+  },
+  "latency": {
+    "bm25": {
+      "avg_ms": 2.64,
+      "min_ms": 2.45,
+      "max_ms": 3.67,
+      "samples": 20
+    },
+    "intent_classify": {
+      "avg_ms": 0.011,
+      "samples": 50
+    }
+  },
+  "bm25_quality": {
+    "早餐": {
+      "results": 20,
+      "top_score": 4.04,
+      "avg_top5": 3.83,
+      "avg_score": 3.57
+    },
+    "游泳池": {
+      "results": 20,
+      "top_score": 12.67,
+      "avg_top5": 11.8,
+      "avg_score": 10.56
+    },
+    "服务": {
+      "results": 20,
+      "top_score": 1.56,
+      "avg_top5": 1.53,
+      "avg_score": 1.47
+    },
+    "房间": {
+      "results": 20,
+      "top_score": 2.0,
+      "avg_top5": 1.95,
+      "avg_score": 1.89
+    },
+    "噪音": {
+      "results": 20,
+      "top_score": 11.92,
+      "avg_top5": 10.05,
+      "avg_score": 7.71
+    },
+    "停车场": {
+      "results": 20,
+      "top_score": 12.8,
+      "avg_top5": 12.63,
+      "avg_score": 10.23
+    },
+    "亲子": {
+      "results": 20,
+      "top_score": 7.65,
+      "avg_top5": 7.09,
+      "avg_score": 6.19
+    },
+    "价格": {
+      "results": 20,
+      "top_score": 8.06,
+      "avg_top5": 7.95,
+      "avg_score": 7.5
+    }
+  },
+  "escalation": {
+    "total": 10,
+    "bm25_sufficient": 10,
+    "escalated_to_rag": 0,
+    "skip_rag_pct": 100.0
+  }
+}
