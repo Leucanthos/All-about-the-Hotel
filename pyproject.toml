@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "hotel"
+version = "1.0.0"
+description = "宿说 — 酒店评论智能顾问 CLI"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0",
+    "transformers>=4.40",
+    "numpy",
+    "pandas",
+    "pillow",
+    "requests",
+    "pyarrow",
+    "openvino>=2024.0",
+    "optimum-intel",
+]
+
+[project.scripts]
+hotel = "hotel.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["hotel*"]
