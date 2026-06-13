@@ -396,6 +396,44 @@ class MultimodalAPI:
     def retriever(self) -> MultimodalRetriever:
         return self._retriever
 
+    # ── 以下方法由 demo.py 调用 (added for compatibility) ──
+
+    def prompt2image_rerank(self, prompt: str, topK: int = 5, diversity_lambda: float = 0.5) -> dict:
+        """MMR 多样性重排 (demo.py 'rerank' 方法)."""
+        return self.prompt2image_diverse(prompt, topK=topK, diversity_lambda=diversity_lambda)
+
+    def prompt2image_filtered(self, prompt: str, topK: int = 10) -> dict:
+        """过滤式检索 (demo.py 'filter' 方法)."""
+        return self.prompt2image_granular(prompt, topK=topK, granularity="strict")
+
+    def classify_room_type(self, text: str) -> dict:
+        """房型分类 (demo.py /api/classify 端点)."""
+        try:
+            clf = self._get_classifier()
+            if clf is None:
+                return {"room_type": "unknown", "confidence": 0.0, "note": "no classifier model"}
+            import torch
+            from transformers import ChineseCLIPProcessor
+            processor = ChineseCLIPProcessor.from_pretrained(
+                "OFA-Sys/chinese-clip-vit-base-patch16", local_files_only=True
+            )
+            inputs = processor(text=[text], return_tensors="pt", padding=True, truncation=True, max_length=77)
+            with torch.no_grad():
+                model = self._retriever.model
+                text_feat = model.get_text_features(**inputs)
+                if hasattr(text_feat, "pooler_output"):
+                    text_feat = text_feat.pooler_output
+                logits = clf(text_feat)
+                probs = torch.softmax(logits, dim=-1)
+            top_prob, top_idx = probs.max(dim=-1)
+            rooms = getattr(self, "_classifier_rooms", ["unknown"])
+            return {
+                "room_type": rooms[top_idx.item()] if top_idx.item() < len(rooms) else "unknown",
+                "confidence": round(top_prob.item(), 4),
+            }
+        except Exception as e:
+            return {"room_type": "unknown", "confidence": 0.0, "error": str(e)}
+
     def _get_ltr_model(self):
         """懒加载 LTR 重排序模型."""
         if self._ltr_model is not None:

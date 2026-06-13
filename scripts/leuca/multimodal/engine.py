@@ -1,5 +1,9 @@
 """Chinese-CLIP 多模态检索引擎 (SU Leuca)."""
-import os, warnings, threading
+
+import os as _os
+_os.environ["HF_HUB_OFFLINE"] = "1"
+import os
+import warnings, threading
 from io import BytesIO
 from typing import Union
 

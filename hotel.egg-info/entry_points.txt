@@ -1,0 +1,2 @@
+[console_scripts]
+hotel = hotel.__main__:main

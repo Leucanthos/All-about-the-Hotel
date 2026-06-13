@@ -10,9 +10,9 @@ Project/
 ├── pyproject.toml                      ← 包配置 (pip install -e . → hotel 命令)
 ├── hotel/                              ← CLI 包
 │   ├── __init__.py
-│   └── __main__.py                     ← 统一 CLI 入口
-├── demo.py                             ← Web Demo (localhost:8080)
-├── setup.py                            ← 环境配置 & 数据准备
+│   ├── __main__.py                     ← CLI 入口 (hotel 命令)
+│   └── demo.py                         ← 终端交互 Demo
+├── configure.py                        ← 环境配置 & 数据准备
 │
 ├── scripts/                            ← 核心代码
 │   ├── _shared/                        ← 共享基础设施
@@ -47,23 +47,14 @@ Project/
 ## 快速开始
 
 ```bash
-# 1. 安装依赖
+# 1. 安装 CLI
 pip install -e .
 
-# 2. 检查环境
-python setup.py --check
-
-# 3. 准备数据: 将 hotel_reviews_table.parquet 放入 data/ 目录
-
-# 4. 下载图片 + 构建索引
-python setup.py --index --images 500 --texts 1000
-
-# 5. (可选) GPU 加速
-python setup.py --gpu
-
-# 6. 验证
-python setup.py
+# 2. 启动
+hotel
 ```
+
+> 环境配置（模型下载、索引构建、GPU 加速）见 `python configure.py --help`。
 
 ```python
 # 多模态检索 (Leuca)
@@ -100,26 +91,21 @@ print(answer_question("早餐怎么样？")["answer"])
 ## CLI 工具
 
 ```bash
-pip install -e .                   # 一次性安装 → 全局可用 hotel 命令
+pip install -e .                    # 一次性安装 → 全局可用 hotel 命令
 
-hotel search "游泳池干净吗"         # 智能召回 (自动选择策略)
-hotel search "适合带老人吗" --rag   # 仅 Agentic RAG
-hotel search "套房 豪华装修" --mm   # 仅多模态检索
-hotel search "早餐怎么样" --top 10  # 返回更多结果
-hotel search --help                # 查看帮助
+hotel                               # 终端交互 Demo
+hotel advise "游泳池干净吗"          # 单次场景顾问查询
 ```
 
-> 也可用 `python -m hotel search "..."` 运行（无需 pip install）。
+> 也可用 `python -m hotel` 运行（无需 pip install）。
 
-输出为结构化 JSON：包含 `multimodal`（图片+分数+方法）、`rag`（答案+证据分+来源）、`meta`（延迟+索引统计）。
-
-## Web Demo
+## 终端 Demo
 
 ```bash
-python demo.py                     # 启动 → http://localhost:8080
+hotel                    # 终端交互 (默认)
+hotel demo               # 同上
+hotel advise "查询内容"   # 单次查询
 ```
 
-4 种检索算法实时对比 (CLIP 基础 / 多粒度 / LTR 重排序 / 分类器预过滤)。
-
-详见 `scripts/leuca/__arch_research/docs/analysis_report.md`
+交互式场景顾问：输入出行场景或具体问题，流式展示识别→检索→研判全过程。
 

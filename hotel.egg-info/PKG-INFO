@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: hotel
+Version: 1.0.0
+Summary: 宿说 — 酒店评论智能顾问 CLI
+Requires-Python: >=3.10
+Requires-Dist: torch>=2.0
+Requires-Dist: transformers>=4.40
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: pillow
+Requires-Dist: requests
+Requires-Dist: pyarrow
+Requires-Dist: openvino>=2024.0
+Requires-Dist: optimum-intel
